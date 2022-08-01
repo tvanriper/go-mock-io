@@ -23,12 +23,16 @@
 */
 package mockio
 
-import "bytes"
+import (
+	"bytes"
+	"time"
+)
 
 // MockIO provides a mock I/O ReadWriteCloser to test your software's i/o stream handling.
 type MockIO struct {
 	buffer  *bytes.Buffer
 	holding []byte
+	timer   <-chan time.Time
 	Expects []Expect
 }
 
@@ -44,6 +48,7 @@ func NewMockIO() *MockIO {
 // Read implements the Reader interface for the MockIO stream.
 // Use this with your software to test that it reads correctly.
 func (m *MockIO) Read(data []byte) (n int, err error) {
+	<-m.timer
 	return m.buffer.Read(data)
 }
 
@@ -57,7 +62,7 @@ func (m *MockIO) Write(data []byte) (n int, err error) {
 		if !ok {
 			continue
 		}
-		test.Wait()
+		m.timer = time.NewTimer(test.Duration()).C
 		respond = append(respond, response...)
 		m.holding = m.holding[count:]
 		break

@@ -6,7 +6,7 @@ import "time"
 // information.
 type Expect interface {
 	Match(b []byte) (response []byte, count int, ok bool)
-	Wait()
+	Duration() time.Duration
 }
 
 // ExpectBytes provides a kind of Expect that precisely matches a sequence of bytes to
@@ -38,9 +38,9 @@ func (e *ExpectBytes) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
-// Wait waits for the duration of this structure before continuing.
-func (e *ExpectBytes) Wait() {
-	time.Sleep(e.WaitDuration)
+// Duration determines how long to wait to answer what is written.
+func (e *ExpectBytes) Duration() time.Duration {
+	return e.WaitDuration
 }
 
 // NewExpectBytes provides a convenience constructor for ExpectBytes.
@@ -74,8 +74,8 @@ func (e *ExpectFunc) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
-func (e *ExpectFunc) Wait() {
-	time.Sleep(e.WaitDuration)
+func (e *ExpectFunc) Duration() time.Duration {
+	return e.WaitDuration
 }
 
 // NewExpectFunc provides a convenience constructor for ExpectFunc.
