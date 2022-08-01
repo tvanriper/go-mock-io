@@ -57,6 +57,7 @@ func (m *MockIO) Write(data []byte) (n int, err error) {
 		if !ok {
 			continue
 		}
+		test.Wait()
 		respond = append(respond, response...)
 		m.holding = m.holding[count:]
 		break

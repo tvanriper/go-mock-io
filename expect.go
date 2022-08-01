@@ -1,16 +1,20 @@
 package mockio
 
+import "time"
+
 // Expect provides an interface for the mock io stream to use when matching incoming
 // information.
 type Expect interface {
 	Match(b []byte) (response []byte, count int, ok bool)
+	Wait()
 }
 
 // ExpectBytes provides a kind of Expect that precisely matches a sequence of bytes to
 // respond with another sequence of bytes.
 type ExpectBytes struct {
-	Expect  []byte
-	Respond []byte
+	Expect       []byte
+	Respond      []byte
+	WaitDuration time.Duration
 }
 
 // Match implements the Expect interface for ExpectBytes.
@@ -34,11 +38,17 @@ func (e *ExpectBytes) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
+// Wait waits for the duration of this structure before continuing.
+func (e *ExpectBytes) Wait() {
+	time.Sleep(e.WaitDuration)
+}
+
 // NewExpectBytes provides a convenience constructor for ExpectBytes.
 func NewExpectBytes(expect []byte, respond []byte) *ExpectBytes {
 	return &ExpectBytes{
-		Expect:  expect,
-		Respond: respond,
+		Expect:       expect,
+		Respond:      respond,
+		WaitDuration: 0,
 	}
 }
 
@@ -50,8 +60,9 @@ type ExpectFuncTest func(b []byte) (count int, ok bool)
 
 // ExpectFunc provides a kind of Expect that tests a sequence of bytes with a function.
 type ExpectFunc struct {
-	Test    ExpectFuncTest
-	Respond []byte
+	Test         ExpectFuncTest
+	Respond      []byte
+	WaitDuration time.Duration
 }
 
 // Match implements the Expect interface for ExpectFunc.
@@ -63,10 +74,15 @@ func (e *ExpectFunc) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
+func (e *ExpectFunc) Wait() {
+	time.Sleep(e.WaitDuration)
+}
+
 // NewExpectFunc provides a convenience constructor for ExpectFunc.
 func NewExpectFunc(fn ExpectFuncTest, response []byte) *ExpectFunc {
 	return &ExpectFunc{
-		Test:    fn,
-		Respond: response,
+		Test:         fn,
+		Respond:      response,
+		WaitDuration: 0,
 	}
 }
