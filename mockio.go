@@ -32,23 +32,26 @@ import (
 type MockIO struct {
 	buffer  *bytes.Buffer
 	holding []byte
-	timer   <-chan time.Time
+	timer   chan time.Duration
 	Expects []Expect
 }
 
 // NewMockIO constructs a new MockIO.
 func NewMockIO() *MockIO {
-	return &MockIO{
+	result := &MockIO{
 		buffer:  bytes.NewBuffer([]byte{}),
 		holding: []byte{},
 		Expects: []Expect{},
+		timer:   make(chan time.Duration, 5),
 	}
+	return result
 }
 
 // Read implements the Reader interface for the MockIO stream.
 // Use this with your software to test that it reads correctly.
 func (m *MockIO) Read(data []byte) (n int, err error) {
-	<-m.timer
+	d := <-m.timer
+	<-time.NewTimer(d).C
 	return m.buffer.Read(data)
 }
 
@@ -57,16 +60,18 @@ func (m *MockIO) Read(data []byte) (n int, err error) {
 func (m *MockIO) Write(data []byte) (n int, err error) {
 	m.holding = append(m.holding, data...)
 	respond := []byte{}
+	dur := time.Millisecond
 	for _, test := range m.Expects {
 		response, count, ok := test.Match(m.holding)
 		if !ok {
 			continue
 		}
-		m.timer = time.NewTimer(test.Duration()).C
+		dur = test.Duration()
 		respond = append(respond, response...)
 		m.holding = m.holding[count:]
 		break
 	}
+	m.timer <- dur
 	m.buffer.Write(respond)
 	return len(data), nil
 }

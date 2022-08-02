@@ -3,7 +3,9 @@ package mockio
 import (
 	"io"
 	"log"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func MatchBytes(l []byte, r []byte) bool {
@@ -152,5 +154,45 @@ func TestMockClear(t *testing.T) {
 	l = len(m.holding)
 	if l != 0 {
 		t.Errorf("holding should have no items, but found %d", l)
+	}
+}
+
+func TestMockDurations(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		m := NewMockIO()
+		test := func(b []byte) (count int, ok bool) {
+			if len(b) != 2 {
+				return 0, false
+			}
+			if b[0] != 0 && b[1] != 1 {
+				return 0, false
+			}
+			return 2, true
+		}
+		exp := []byte{3, 4}
+		e := NewExpectFunc(test, exp)
+		e.WaitDuration = time.Duration(rand.Intn(200)) * time.Millisecond
+		m.Expect(e)
+		start := time.Now()
+		m.Write([]byte{0, 1})
+		b := make([]byte, 2)
+		n, err := m.Read(b)
+		if err != nil {
+			t.Error(err)
+		}
+		duration := time.Since(start)
+		if n != 2 {
+			t.Errorf("expected %d, received %d", len(exp), n)
+		}
+
+		if !MatchBytes(b, exp) {
+			t.Errorf("expected %#v but received %#v", exp, b)
+		}
+
+		if duration < e.WaitDuration {
+			t.Errorf("expected actual execution time to take longer than %s", e.WaitDuration.String())
+		}
+
+		log.Printf("received: %#v\n", b)
 	}
 }

@@ -48,7 +48,7 @@ func NewExpectBytes(expect []byte, respond []byte) *ExpectBytes {
 	return &ExpectBytes{
 		Expect:       expect,
 		Respond:      respond,
-		WaitDuration: 0,
+		WaitDuration: time.Millisecond,
 	}
 }
 
@@ -83,6 +83,6 @@ func NewExpectFunc(fn ExpectFuncTest, response []byte) *ExpectFunc {
 	return &ExpectFunc{
 		Test:         fn,
 		Respond:      response,
-		WaitDuration: 0,
+		WaitDuration: time.Millisecond,
 	}
 }
