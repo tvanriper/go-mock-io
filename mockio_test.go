@@ -25,7 +25,7 @@ func MatchBytes(l []byte, r []byte) bool {
 func TestMockIO(t *testing.T) {
 	m := NewMockIO()
 	exp := []byte{3, 4}
-	m.Expect(NewExpectBytes([]byte{1, 2}, exp))
+	m.Expect(NewExpectBytes([]byte{1, 2}, exp, 0))
 	m.Write([]byte{1, 2})
 	b := make([]byte, 2)
 	n, err := m.Read(b)
@@ -73,7 +73,7 @@ func TestMockIOFunc(t *testing.T) {
 		return 2, true
 	}
 	exp := []byte{3, 4}
-	m.Expect(NewExpectFunc(test, exp))
+	m.Expect(NewExpectFunc(test, exp, 0))
 	m.Write([]byte{0, 1})
 	b := make([]byte, 2)
 	n, err := m.Read(b)
@@ -94,7 +94,7 @@ func TestMockIOFunc(t *testing.T) {
 func TestMockIOFail(t *testing.T) {
 	m := NewMockIO()
 	exp := []byte{3, 4}
-	m.Expect(NewExpectBytes([]byte{1, 2}, exp))
+	m.Expect(NewExpectBytes([]byte{1, 2}, exp, 0))
 	m.Write([]byte{0, 2})
 	b := make([]byte, 2)
 	n, err := m.Read(b)
@@ -133,7 +133,7 @@ func TestMockIOFail(t *testing.T) {
 func TestMockClear(t *testing.T) {
 	m := NewMockIO()
 	exp := []byte{3, 4}
-	m.Expect(NewExpectBytes([]byte{1, 2}, exp))
+	m.Expect(NewExpectBytes([]byte{1, 2}, exp, 0))
 	l := len(m.Expects)
 	if l != 1 {
 		t.Errorf("expected 1 item, but found %d", l)
@@ -144,7 +144,7 @@ func TestMockClear(t *testing.T) {
 		t.Errorf("expected 0 items, but found %d", l)
 	}
 
-	m.Expect(NewExpectBytes([]byte{1, 2}, exp))
+	m.Expect(NewExpectBytes([]byte{1, 2}, exp, 0))
 	m.Write([]byte{3, 4})
 	l = len(m.holding)
 	if l != 2 {
@@ -170,8 +170,7 @@ func TestMockDurations(t *testing.T) {
 			return 2, true
 		}
 		exp := []byte{3, 4}
-		e := NewExpectFunc(test, exp)
-		e.WaitDuration = time.Duration(rand.Intn(200)) * time.Millisecond
+		e := NewExpectFunc(test, exp, time.Duration(rand.Intn(200))*time.Millisecond)
 		m.Expect(e)
 		start := time.Now()
 		m.Write([]byte{0, 1})

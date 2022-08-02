@@ -5,8 +5,8 @@ import "time"
 // Expect provides an interface for the mock io stream to use when matching incoming
 // information.
 type Expect interface {
-	Match(b []byte) (response []byte, count int, ok bool)
-	Duration() time.Duration
+	Match(b []byte) (response []byte, count int, ok bool) // Match provides a response to a given set of bytes
+	Duration() time.Duration                              // Duraction provides the amount of time to wait before responding to a read request for this response
 }
 
 // ExpectBytes provides a kind of Expect that precisely matches a sequence of bytes to
@@ -38,17 +38,17 @@ func (e *ExpectBytes) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
-// Duration determines how long to wait to answer what is written.
+// Duration responds with how long to wait before responding to a read request.
 func (e *ExpectBytes) Duration() time.Duration {
 	return e.WaitDuration
 }
 
 // NewExpectBytes provides a convenience constructor for ExpectBytes.
-func NewExpectBytes(expect []byte, respond []byte) *ExpectBytes {
+func NewExpectBytes(expect []byte, respond []byte, wait time.Duration) *ExpectBytes {
 	return &ExpectBytes{
 		Expect:       expect,
 		Respond:      respond,
-		WaitDuration: time.Millisecond,
+		WaitDuration: wait,
 	}
 }
 
@@ -74,15 +74,16 @@ func (e *ExpectFunc) Match(b []byte) (response []byte, count int, ok bool) {
 	return response, count, ok
 }
 
+// Duration provides the amount of time to wait before responding to a read request.
 func (e *ExpectFunc) Duration() time.Duration {
 	return e.WaitDuration
 }
 
 // NewExpectFunc provides a convenience constructor for ExpectFunc.
-func NewExpectFunc(fn ExpectFuncTest, response []byte) *ExpectFunc {
+func NewExpectFunc(fn ExpectFuncTest, response []byte, wait time.Duration) *ExpectFunc {
 	return &ExpectFunc{
 		Test:         fn,
 		Respond:      response,
-		WaitDuration: time.Millisecond,
+		WaitDuration: wait,
 	}
 }
