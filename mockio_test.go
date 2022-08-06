@@ -195,3 +195,38 @@ func TestMockDurations(t *testing.T) {
 		log.Printf("received: %#v\n", b)
 	}
 }
+
+func TestMockSend(t *testing.T) {
+	m := NewMockIO()
+	m.Send([]byte("Hi"), 0)
+	b := make([]byte, 2)
+	n, err := m.Read(b)
+	if err != nil {
+		t.Error(err)
+	}
+	if n != 2 {
+		t.Errorf("expected 2, received %d", n)
+	}
+	if string(b) != "Hi" {
+		t.Errorf("expected 'Hi' but received %#v", b)
+	}
+
+	// Testing 'duration'.
+	b = make([]byte, 10)
+	msg := "Hullo"
+	start := time.Now()
+	m.Send([]byte(msg), 100*time.Millisecond)
+	n, err = m.Read(b)
+	duration := time.Since(start)
+	answer := string(b[:n])
+	if err != nil {
+		t.Error(err)
+	} else {
+		if duration < 100*time.Millisecond {
+			t.Errorf("expected execution time to take longer than 100 milliseconds, but it took %s", duration.String())
+		}
+		if answer != msg {
+			t.Errorf("expected %s but received %s", msg, answer)
+		}
+	}
+}

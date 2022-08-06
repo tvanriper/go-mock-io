@@ -1,27 +1,18 @@
-/*
-	Package mockio provides a mock I/O ReadWriteCloser stream for testing your software's i/o stream handling.
-	Example usage:
-
-		func main() {
-			s := NewMockIO()
-			s.Expect(NewExpectBytes([]byte{1,2},[]byte{3,4}))
-			s.Write([]byte{1,2})
-			b := make([]byte,2)
-			n, err := s.Read(b)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("n: %d, b: %#v", n, b)
-		}
-
-	which should print:
-
-		n: 2, b: []byte{0x3, 0x4}
-
-	You can use this to test things like serial I/O, or perhaps console I/O, without having
-	to open a serial port or a console, allowing for automated testing in a controlled fashion.
-*/
+//	Package mockio provides a mock ReaderWriterCloser to test your software's i/o stream handling.
 package mockio
+
+/*
+Package mockio implements a ReaderWriterCloser for mocking a ReaderWriterCloser
+(such as a serial device).
+
+You can program it to expect certain sequences of bytes and provide a response.
+
+Alternatively, you can provide a function to determine if a sequence of bytes
+written to the mock device matches your expectations, and send a response.
+
+Or, you can create your own structure matching the Expect interface to handle
+the incoming bytes and respond accordingly.
+*/
 
 import (
 	"bytes"
@@ -74,6 +65,15 @@ func (m *MockIO) Write(data []byte) (n int, err error) {
 	m.timer <- dur
 	m.buffer.Write(respond)
 	return len(data), nil
+}
+
+// Send writes data through the mock serial device to the Read function.  It is
+// meant to mimic the serial device sending data not in response to a Write,
+// but on its own (perhaps due to an event on the hardware connected to the
+// serial device you're mocking).
+func (m *MockIO) Send(data []byte, wait time.Duration) {
+	m.timer <- wait
+	m.buffer.Write(data)
 }
 
 // Expect adds a new Expect item to a list of things for the MockIO Write to expect.
