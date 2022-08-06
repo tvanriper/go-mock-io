@@ -16,6 +16,7 @@ the incoming bytes and respond accordingly.
 
 import (
 	"bytes"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,7 @@ type MockIO struct {
 	holding []byte
 	timer   chan time.Duration
 	Expects []Expect
+	lock    sync.Mutex
 }
 
 // NewMockIO constructs a new MockIO.
@@ -49,6 +51,8 @@ func (m *MockIO) Read(data []byte) (n int, err error) {
 // Write implements the Writer interface for the MockIO stream.
 // Use this with your software to test that it writes correctly.
 func (m *MockIO) Write(data []byte) (n int, err error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.holding = append(m.holding, data...)
 	respond := []byte{}
 	dur := time.Millisecond
@@ -72,17 +76,23 @@ func (m *MockIO) Write(data []byte) (n int, err error) {
 // but on its own (perhaps due to an event on the hardware connected to the
 // serial device you're mocking).
 func (m *MockIO) Send(data []byte, wait time.Duration) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.timer <- wait
 	m.buffer.Write(data)
 }
 
 // Expect adds a new Expect item to a list of things for the MockIO Write to expect.
 func (m *MockIO) Expect(exp Expect) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.Expects = append(m.Expects, exp)
 }
 
 // ClearExpectations removes all items stored in MockIO's Expect buffer.
 func (m *MockIO) ClearExpectations() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.Expects = []Expect{}
 }
 
